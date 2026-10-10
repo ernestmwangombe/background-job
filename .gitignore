@@ -1,0 +1,32 @@
+# Dependencies installed by npm
+node_modules/
+# Local secrets file holding real keys
+.env
+# Legacy package manager folder
+jspm_packages/
+# Local environment override files
+.env.local
+# Development environment override
+.env.development.local
+# Test environment override
+.env.test.local
+# Production environment override
+.env.production.local
+# Local database files
+*.db
+# SQLite database files
+*.sqlite
+# SQLite version 3 database files
+*.sqlite3
+# npm debug logs
+npm-debug.log*
+# Yarn debug logs
+yarn-debug.log*
+# Yarn error logs
+yarn-error.log*
+# macOS folder metadata
+.DS_Store
+# Windows thumbnail cache
+Thumbs.db
+# Quarantine and cost logs hold raw model output and user input, so never commit them
+logs/
