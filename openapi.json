@@ -1,0 +1,164 @@
+{
+"openapi": "3.0.0",
+"info": {
+"title": "Kenyan SME Document Security API",
+"version": "1.0.0",
+"description": "Interactive API documentation featuring Supabase JWT Bearer token authentication and ODPC-compliant protected endpoints."
+},
+"paths": {
+"/": {
+"get": {
+"summary": "Guard Tower Health Check",
+"responses": {
+"200": { "description": "Server health status" }
+}
+}
+},
+"/auth/signup": {
+"post": {
+"summary": "Register Internal Staff Account",
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"email": { "type": "string", "example": "test@example.com" },
+"password": { "type": "string", "example": "password123" }
+},
+"required": ["email", "password"]
+}
+}
+}
+},
+"responses": {
+"201": { "description": "User account created in Supabase" },
+"400": { "description": "Invalid payload or registration error" }
+}
+}
+},
+"/auth/login": {
+"post": {
+"summary": "Authenticate & Issue JWT Access Token",
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"email": { "type": "string", "example": "test@example.com" },
+"password": { "type": "string", "example": "password123" }
+},
+"required": ["email", "password"]
+}
+}
+}
+},
+"responses": {
+"200": { "description": "Authentication successful, returns JWT access_token" },
+"401": { "description": "Invalid credentials" }
+}
+}
+},
+"/auth/logout": {
+"post": {
+"summary": "Revoke Session (Protected)",
+"security": [
+{ "BearerAuth": [] }
+],
+"responses": {
+"204": { "description": "Session revoked successfully" },
+"401": { "description": "Unauthorized access token" }
+}
+}
+},
+"/public/info": {
+"get": {
+"summary": "Public Information Directory",
+"responses": {
+"200": { "description": "Unrestricted public message" }
+}
+}
+},
+"/protected/profile": {
+"get": {
+"summary": "Authenticated Staff Profile (Protected)",
+"security": [
+{ "BearerAuth": [] }
+],
+"responses": {
+"200": { "description": "Verified user profile metadata" },
+"401": { "description": "Missing, forged, or expired token" }
+}
+}
+},
+"/protected/dashboard": {
+"get": {
+"summary": "SME Operational Dashboard (Protected)",
+"security": [
+{ "BearerAuth": [] }
+],
+"responses": {
+"200": { "description": "Secure SME operational data" },
+"401": { "description": "Missing, forged, or expired token" }
+}
+}
+},
+"/triage": {
+"post": {
+"summary": "Classify a support message (Protected)",
+"description": "Sends one support message to the LLM and returns a category, urgency, confidence and reason in a fixed shape. Requires a Supabase access token.",
+"security": [
+{ "BearerAuth": [] }
+],
+"requestBody": {
+"required": true,
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"text": { "type": "string", "minLength": 1, "maxLength": 2000, "example": "I was charged twice for my subscription this month." }
+},
+"required": ["text"]
+}
+}
+}
+},
+"responses": {
+"200": {
+"description": "Validated classification",
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"category": { "type": "string", "enum": ["billing", "bug", "feature", "other"] },
+"urgency": { "type": "string", "enum": ["low", "normal", "high"] },
+"confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+"reason": { "type": "string" }
+},
+"required": ["category", "urgency", "confidence", "reason"]
+}
+}
+}
+},
+"400": { "description": "Validation failed; the response names the offending field" },
+"401": { "description": "Missing, forged, or expired token" },
+"501": { "description": "Model not wired up yet (set LLM_STUB=1 for a stub response)" }
+}
+}
+}
+},
+"components": {
+"securitySchemes": {
+"BearerAuth": {
+"type": "http",
+"scheme": "bearer",
+"bearerFormat": "JWT"
+}
+}
+}
+}
