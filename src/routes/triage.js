@@ -2,12 +2,14 @@
 const express = require('express');
 // Import the schemas and the stub answer defined in Stage 1
 const { triageInputSchema, triageOutputSchema, STUB_RESPONSE } = require('../llm/schema');
+// Import the function that sends a message to the model (Stage 2)
+const { classifyMessage } = require('../llm/triageModel');
 
 // Create a router; server.js mounts it behind requireAuth, so only logged-in users reach this code
 const router = express.Router();
 
-// Handle POST /triage (the router is mounted at /triage, so the path here is /)
-router.post('/', (req, res) => {
+// Handle POST /triage (the router is mounted at /triage, so the path here is /); async because the model call waits
+router.post('/', async (req, res) => {
   // Validate the request body before doing anything else; every rejected request is a model call we never pay for
   const parsed = triageInputSchema.safeParse(req.body);
 
@@ -35,14 +37,26 @@ router.post('/', (req, res) => {
   // End of the stub-mode branch
   }
 
-  // Stage 2 will call the model here; until then, say so clearly instead of pretending
-  return res.status(501).json({
-    // A short error label
-    error: 'Not Implemented',
-    // Tell the caller how to get an answer in the meantime
-    message: 'The model is not wired up yet. Set LLM_STUB=1 to receive a stub response.',
-  // End of the 501 response body
-  });
+  // Live mode: ask the model, and never let a failure crash the process
+  try {
+    // Send the validated, trimmed message to the model
+    const { rawText, promptVersion } = await classifyMessage(parsed.data.text);
+    // STAGE 2 ONLY: the assignment says to return the raw reply for now; Stage 3 replaces this with parsed, validated JSON
+    return res.status(200).json({ stage: 2, prompt_version: promptVersion, raw_model_text: rawText });
+  // End of the try block
+  } catch (err) {
+    // A missing provider setting is a server configuration problem, not a model failure
+    if (err.code === 'LLM_NOT_CONFIGURED') {
+      // Tell the caller the feature is unavailable without naming any setting values
+      return res.status(503).json({ error: 'Service Unavailable', message: 'The model is not configured on the server.' });
+    // End of the not-configured branch
+    }
+    // Log the HTTP status and message on the server only; the key is never part of this message
+    console.error('[triage] model call failed:', err.status ?? 'no-status', err.message);
+    // Return a generic error so provider details never leak to callers; Stage 4 refines this into 504 and retries
+    return res.status(502).json({ error: 'Bad Gateway', message: 'The model call failed.' });
+  // End of the catch block
+  }
 // End of the POST handler
 });
 
