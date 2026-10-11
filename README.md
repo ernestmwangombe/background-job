@@ -20,7 +20,7 @@ The prompt lives in a file, not in the route: [prompts/triage-v1.md](prompts/tri
 
 The customer's message is never put in the system prompt. It is sent as a separate user message, JSON-encoded (`{"text": "..."}`), so quotes inside it cannot break out of their string. Temperature is low (0.2 by default, change it with `LLM_TEMPERATURE`) so the same input gives the same answer.
 
-To try the real model, remove `LLM_STUB` from `.env` (or set it to `0`) and restart the server. Until Stage 3 adds parsing and validation, a live call returns the model's text as `raw_model_text`.
+To try the real model, remove `LLM_STUB` from `.env` (or set it to `0`) and restart the server.
 
 ## Stage 2 notes: what I saw
 
@@ -39,6 +39,19 @@ What surprised me:
 - **Confidence was 1.0 every time**, even though my own example used 0.95. The model is not calibrated, so confidence should not be trusted yet; the Stage 5 eval will show whether it matters.
 - **The JSON came back clean without being forced.** The prompt only asks for it. Stage 3 still strips code fences and validates, because three clean answers prove little.
 - **A low temperature worked.** Google recommends leaving Gemini 3 models at 1.0, but 0.2 gave no looping or odd output on these three inputs.
+
+## Output handling (Stage 3)
+
+A model's answer is treated like any other input from outside the system. Every live call goes through four steps:
+
+1. **Parse.** Strip a markdown code fence or chatty text around the reply and find the JSON object. Bad syntax is a failure, not a crash.
+2. **Validate.** Check it against the Zod schema in `src/llm/schema.js`: exactly four fields, `category` and `urgency` from the closed lists, `confidence` between 0 and 1. Extra fields are rejected.
+3. **Repair once.** If parsing or validation fails, make one more call with the same prompt, the model's rejected answer, and the exact error ("Your previous answer was rejected for this reason ... Return only corrected JSON matching the schema.").
+4. **Give up cleanly.** If the second answer also fails, the endpoint returns **422** and writes the input, both raw outputs, the errors and the prompt version to `logs/quarantine.jsonl` (git-ignored, because it holds user input). It never crashes and never guesses a default.
+
+Callers only ever receive the validated JSON from the job card, or an error. Raw model text is never returned, on success or on failure.
+
+To check this logic without calling the model or using any quota, run `node scripts/check-stage3.js`.
 
 ## POST /triage
 

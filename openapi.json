@@ -109,7 +109,7 @@
 "/triage": {
 "post": {
 "summary": "Classify a support message (Protected)",
-"description": "Sends one support message to the LLM and returns a category, urgency, confidence and reason in a fixed shape. Requires a Supabase access token. Stage 2 note: with LLM_STUB unset the live response is temporarily { stage, prompt_version, raw_model_text } until Stage 3 adds validation.",
+"description": "Sends one support message to the LLM and returns a category, urgency, confidence and reason in a fixed shape. Requires a Supabase access token. The model's answer is validated against the schema and repaired once if needed; raw model text is never returned.",
 "security": [
 { "BearerAuth": [] }
 ],
@@ -147,6 +147,7 @@
 },
 "400": { "description": "Validation failed; the response names the offending field" },
 "401": { "description": "Missing, forged, or expired token" },
+"422": { "description": "The model could not produce a valid classification after one repair attempt; the attempt is logged for review" },
 "502": { "description": "The model call failed" },
 "503": { "description": "The model is not configured on the server" }
 }

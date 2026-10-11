@@ -2,8 +2,10 @@
 const express = require('express');
 // Import the schemas and the stub answer defined in Stage 1
 const { triageInputSchema, triageOutputSchema, STUB_RESPONSE } = require('../llm/schema');
-// Import the function that sends a message to the model (Stage 2)
+// Import the function that asks the model, validates the answer and repairs it once (Stages 2 and 3)
 const { classifyMessage } = require('../llm/triageModel');
+// Import the function that sets failed answers aside in a log file (Stage 3)
+const { quarantine } = require('../llm/quarantine');
 
 // Create a router; server.js mounts it behind requireAuth, so only logged-in users reach this code
 const router = express.Router();
@@ -39,10 +41,38 @@ router.post('/', async (req, res) => {
 
   // Live mode: ask the model, and never let a failure crash the process
   try {
-    // Send the validated, trimmed message to the model
-    const { rawText, promptVersion } = await classifyMessage(parsed.data.text);
-    // STAGE 2 ONLY: the assignment says to return the raw reply for now; Stage 3 replaces this with parsed, validated JSON
-    return res.status(200).json({ stage: 2, prompt_version: promptVersion, raw_model_text: rawText });
+    // Send the validated, trimmed message to the model; this validates the answer and repairs it once if needed
+    const result = await classifyMessage(parsed.data.text);
+    // If we have a schema-valid answer, return only that clean object
+    if (result.ok) {
+      // Return 200 with the validated classification (never the raw model text)
+      return res.status(200).json(result.data);
+    // End of the success branch
+    }
+    // The model failed twice: set the attempt aside with its input, errors, raw output and prompt version
+    quarantine({
+      // The customer's message that caused the failure
+      input: parsed.data.text,
+      // The reason the final attempt was rejected
+      error: result.error,
+      // The reason each attempt was rejected
+      errors: result.errors,
+      // The raw model text from each attempt (log only, never returned to callers)
+      rawOutputs: result.rawOutputs,
+      // Which prompt version produced them
+      promptVersion: result.promptVersion,
+      // Which model produced them
+      model: process.env.LLM_MODEL,
+    // End of the quarantine entry
+    });
+    // Answer 422: the request was understood but no valid result could be produced
+    return res.status(422).json({
+      // A short error label
+      error: 'Unprocessable Entity',
+      // A clear message that contains no model text
+      message: 'The model could not produce a valid classification for this message. The attempt was logged for review.',
+    // End of the 422 response body
+    });
   // End of the try block
   } catch (err) {
     // A missing provider setting is a server configuration problem, not a model failure
