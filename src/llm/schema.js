@@ -53,6 +53,19 @@ const STUB_RESPONSE = {
 // End of the stub answer
 };
 
+// The safe, deterministic answer used when the kill switch (LLM_ENABLED=false) is on: it routes the message to a human
+const FALLBACK_RESPONSE = {
+  // The when-unsure category from the job card
+  category: 'other',
+  // A middle urgency, because we cannot judge
+  urgency: 'normal',
+  // Zero confidence, so downstream code knows no model looked at this
+  confidence: 0,
+  // A clear sign why this answer was produced
+  reason: 'AI triage is switched off, so this message needs human review.',
+// End of the fallback answer
+};
+
 // Export everything the route and later stages need
 module.exports = {
   // The input schema
@@ -61,6 +74,8 @@ module.exports = {
   triageOutputSchema,
   // The stub answer
   STUB_RESPONSE,
+  // The kill-switch fallback answer
+  FALLBACK_RESPONSE,
   // The category list, reused by the prompt and the eval script later
   CATEGORIES,
   // The urgency list, reused by the prompt and the eval script later

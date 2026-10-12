@@ -53,6 +53,17 @@ Callers only ever receive the validated JSON from the job card, or an error. Raw
 
 To check this logic without calling the model or using any quota, run `node scripts/check-stage3.js`.
 
+## Reliability (Stage 4)
+
+- **Timeout.** The model client has a 30-second timeout (`LLM_TIMEOUT_MS`, capped at 60 seconds) instead of the SDK's ten-minute default. When it fires, the endpoint answers **504** with a clear message.
+- **Retries.** I chose my own retry logic over the SDK's: the SDK's silent retries are switched off (`maxRetries: 0`), so one request is exactly one call, and `src/llm/retry.js` is the only place retries happen. It retries timeouts, **429** and **5xx** only, up to 3 times (`LLM_MAX_RETRIES`), waiting about 1s, 2s and 4s plus up to 250 ms of random jitter. If the server sends a `Retry-After` header, that wait is used instead of a guess, and a wait longer than 10 seconds is not worth holding a caller's request open for, so it gives up. **400, 401 and 403 are never retried.**
+- **Worst case.** A model that times out every time can hold one request for about 2 minutes (four 30-second attempts plus the waits), and a repair call can double that. Lower `LLM_MAX_RETRIES` or `LLM_TIMEOUT_MS` if that is too long.
+- **Cost log.** Every live request writes one JSON line to standard output with the prompt version, model, input tokens, output tokens, duration in milliseconds, number of HTTP requests and retries, whether a repair was needed, and the outcome (`ok`, `invalid_output`, `timeout`, `rate_limited`, `auth_error`, and so on). Tokens are summed across the first call and the repair call. Each retry also logs its own `llm_retry` line.
+- **Latency.** With Gemini's default thinking, three live calls to `gemini-3.1-flash-lite` took 23.8, 18.9 and 21.9 seconds for about 616 input and 36 to 40 output tokens, close to the 30-second timeout. Setting `LLM_REASONING_EFFORT=minimal` (passed to Gemini as `reasoning_effort`) cut two calls to 1.9 and 1.5 seconds with the same reported output tokens, so the extra time was hidden thinking, which the output token count does not include. That also means the token counts in the cost log undercount Gemini's real output when thinking is on. The setting is only sent when set, so other providers are unaffected.
+- **Kill switch.** Set `LLM_ENABLED=false` and restart: the endpoint skips the model entirely and answers at once with a deterministic fallback (`category: other`, `urgency: normal`, `confidence: 0`, and a reason saying AI triage is off), so downstream code keeps working and a human reviews the message. The logs then show an `llm_disabled` line and no model calls.
+
+To check the retry rules, error mapping and kill switch without calling the model, run `node scripts/check-stage4.js`.
+
 ## POST /triage
 
 Classifies one support message. It requires a logged-in user: get a Bearer token from `POST /auth/login` first. The input and output shapes are in [JOB-CARD.md](JOB-CARD.md).

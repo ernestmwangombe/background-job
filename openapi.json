@@ -109,7 +109,7 @@
 "/triage": {
 "post": {
 "summary": "Classify a support message (Protected)",
-"description": "Sends one support message to the LLM and returns a category, urgency, confidence and reason in a fixed shape. Requires a Supabase access token. The model's answer is validated against the schema and repaired once if needed; raw model text is never returned.",
+"description": "Sends one support message to the LLM and returns a category, urgency, confidence and reason in a fixed shape. Requires a Supabase access token. The model's answer is validated against the schema and repaired once if needed; raw model text is never returned. If the server runs with LLM_ENABLED=false, a safe fallback (category other, confidence 0) is returned without calling the model.",
 "security": [
 { "BearerAuth": [] }
 ],
@@ -149,7 +149,8 @@
 "401": { "description": "Missing, forged, or expired token" },
 "422": { "description": "The model could not produce a valid classification after one repair attempt; the attempt is logged for review" },
 "502": { "description": "The model call failed" },
-"503": { "description": "The model is not configured on the server" }
+"503": { "description": "The model is not configured on the server, or the provider is rate limiting requests" },
+"504": { "description": "The model took too long to respond, even after retries" }
 }
 }
 }
