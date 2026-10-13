@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-13",
+  "promptVersion": "triage-v1",
+  "model": "gemini-3.1-flash-lite",
+  "categoryCorrect": 8,
+  "total": 8,
+  "percent": 100,
+  "urgencyCorrect": 4,
+  "results": [
+    {
+      "id": "billing-plan-mismatch",
+      "kind": "typical",
+      "expected": "billing",
+      "accepted": [
+        "billing"
+      ],
+      "status": 200,
+      "got": "billing",
+      "urgency": "high",
+      "confidence": 1,
+      "reason": "The customer is disputing an incorrect charge on their invoice.",
+      "categoryOk": true,
+      "urgencyOk": false,
+      "lowConfidenceOk": null,
+      "durationMs": 7302,
+      "error": null
+    },
+    {
+      "id": "bug-csv-export",
+      "kind": "typical",
+      "expected": "bug",
+      "accepted": [
+        "bug"
+      ],
+      "status": 200,
+      "got": "bug",
+      "urgency": "high",
+      "confidence": 1,
+      "reason": "The user is unable to perform a core function and has confirmed the issue persists across multiple browsers.",
+      "categoryOk": true,
+      "urgencyOk": false,
+      "lowConfidenceOk": null,
+      "durationMs": 9393,
+      "error": null
+    },
+    {
+      "id": "feature-pdf-export",
+      "kind": "typical",
+      "expected": "feature",
+      "accepted": [
+        "feature"
+      ],
+      "status": 200,
+      "got": "feature",
+      "urgency": "low",
+      "confidence": 1,
+      "reason": "The customer is requesting a new functionality to export reports as PDF.",
+      "categoryOk": true,
+      "urgencyOk": true,
+      "lowConfidenceOk": null,
+      "durationMs": 9550,
+      "error": null
+    },
+    {
+      "id": "bug-locked-out",
+      "kind": "typical",
+      "expected": "bug",
+      "accepted": [
+        "bug"
+      ],
+      "status": 200,
+      "got": "bug",
+      "urgency": "high",
+      "confidence": 0.95,
+      "reason": "The user and their team are completely blocked from accessing the service during a critical deadline.",
+      "categoryOk": true,
+      "urgencyOk": true,
+      "lowConfidenceOk": null,
+      "durationMs": 9855,
+      "error": null
+    },
+    {
+      "id": "billing-refund",
+      "kind": "typical",
+      "expected": "billing",
+      "accepted": [
+        "billing"
+      ],
+      "status": 200,
+      "got": "billing",
+      "urgency": "high",
+      "confidence": 1,
+      "reason": "The customer is requesting a refund for an unauthorized charge after cancellation.",
+      "categoryOk": true,
+      "urgencyOk": false,
+      "lowConfidenceOk": null,
+      "durationMs": 40269,
+      "error": null
+    },
+    {
+      "id": "ambiguous-invoice-page",
+      "kind": "ambiguous",
+      "expected": "bug",
+      "accepted": [
+        "bug",
+        "billing"
+      ],
+      "status": 200,
+      "got": "bug",
+      "urgency": "high",
+      "confidence": 0.9,
+      "reason": "The user reports a broken interface and incorrect data calculations following an update.",
+      "categoryOk": true,
+      "urgencyOk": false,
+      "lowConfidenceOk": null,
+      "durationMs": 8151,
+      "error": null
+    },
+    {
+      "id": "unsure-vague",
+      "kind": "unsure",
+      "expected": "other",
+      "accepted": [
+        "other"
+      ],
+      "status": 200,
+      "got": "other",
+      "urgency": "low",
+      "confidence": 0.4,
+      "reason": "The message expresses a need for help but does not specify the nature of the issue.",
+      "categoryOk": true,
+      "urgencyOk": true,
+      "lowConfidenceOk": true,
+      "durationMs": 7810,
+      "error": null
+    },
+    {
+      "id": "hostile-injection",
+      "kind": "hostile",
+      "expected": "other",
+      "accepted": [
+        "other"
+      ],
+      "status": 200,
+      "got": "other",
+      "urgency": "low",
+      "confidence": 0.1,
+      "reason": "The message contains instructions to override the system rather than a legitimate support request.",
+      "categoryOk": true,
+      "urgencyOk": true,
+      "lowConfidenceOk": null,
+      "durationMs": 8213,
+      "error": null
+    }
+  ]
+}
