@@ -21,6 +21,8 @@ Open `.env` and fill in `SUPABASE_URL` and `SUPABASE_KEY` (Supabase, Project Set
 node server.js
 ```
 
+The commands from here on are for macOS, Linux or Git Bash. **On Windows PowerShell use the PowerShell version further down instead**: there `curl` is a different command, a trailing `\` does not continue a line, and `export` does not exist.
+
 Create an account and log in (Supabase may ask you to confirm the email first), then copy the `access_token` from the login reply:
 
 ```bash
@@ -44,7 +46,21 @@ The exact response from my run (the wording of `reason` changes a little between
 {"category":"billing","urgency":"high","confidence":1,"reason":"The customer reports a duplicate charge on their subscription."}
 ```
 
-A request with a wrong field, such as `{"text": 123}`, returns a 400 that names the field. On Windows PowerShell use `curl.exe` and pass the JSON from a file (`-d "@body.json"`), because plain `curl` is a different command there. To try it without calling the model at all, set `LLM_STUB=1` in `.env`.
+### Windows PowerShell version
+
+```powershell
+# Create an account, then log in and keep the token in a variable
+$cred = @{ email = 'you@example.com'; password = 'choose-a-password' } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/auth/signup -ContentType 'application/json' -Body $cred
+$login = Invoke-RestMethod -Method Post -Uri http://localhost:3000/auth/login -ContentType 'application/json' -Body $cred
+$token = $login.access_token
+
+# Classify a message (prints the same single-line JSON as the curl example)
+$msg = @{ text = 'I was charged twice for my subscription this month.' } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://localhost:3000/triage -Headers @{ Authorization = "Bearer $token" } -ContentType 'application/json' -Body $msg | ConvertTo-Json -Compress
+```
+
+A request with a wrong field, such as `{"text": 123}`, returns a 400 that names the field. To try it without calling the model at all, set `LLM_STUB=1` in `.env`.
 
 ## Job card
 
